@@ -1,0 +1,35 @@
+from flask import Flask, render_template, request
+import sqlite3
+from scraper import scrape_craigslist
+import os
+
+app = Flask(__name__)
+
+def get_db():
+    conn = sqlite3.connect("cars.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    conn = get_db()
+
+    if request.method == "POST":
+        scrape_craigslist()
+
+    min_price = request.args.get("min_price", 0)
+    max_price = request.args.get("max_price", 100000)
+    min_year = request.args.get("min_year", 0)
+
+    cars = conn.execute("""
+        SELECT * FROM cars
+        WHERE price BETWEEN ? AND ?
+        AND year >= ?
+        ORDER BY id DESC
+    """, (min_price, max_price, min_year)).fetchall()
+
+    return render_template("index.html", cars=cars)
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
