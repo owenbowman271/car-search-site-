@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Car Finder</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<h1>🚗 Car Search Engine</h1>
+
+<form method="POST">
+    <button type="submit">Scrape New Listings</button>
+</form>
+
+<h2>Filters</h2>
+<form method="GET">
+    Min Price: <input name="min_price"><br>
+    Max Price: <input name="max_price"><br>
+    Min Year: <input name="min_year"><br>
+    <button type="submit">Apply Filters</button>
+</form>
+
+<h2>Results</h2>
+
+{% for car in cars %}
+<div>
+    <h3>{{ car['title'] }}</h3>
+    <p>${{ car['price'] }}</p>
+    <p>Year: {{ car['year'] }}</p>
+    <a href="{{ car['link'] }}" target="_blank">View</a>
+</div>
+{% endfor %}
+
+</body>
+</html>
