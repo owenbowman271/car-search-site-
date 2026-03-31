@@ -1,0 +1,53 @@
+import requests
+from bs4 import BeautifulSoup
+import sqlite3
+import re
+
+def create_table():
+    conn = sqlite3.connect("cars.db")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS cars (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            price INTEGER,
+            year INTEGER,
+            mileage INTEGER,
+            link TEXT
+        )
+    """)
+    conn.close()
+
+def extract_year(title):
+    match = re.search(r"(20\d{2}|19\d{2})", title)
+    return int(match.group()) if match else 0
+
+def scrape_craigslist():
+    create_table()
+
+    url = "https://seattle.craigslist.org/search/cta"
+
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers)
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    listings = soup.select(".result-row")
+
+    conn = sqlite3.connect("cars.db")
+
+    for item in listings[:25]:
+        title = item.select_one(".result-title").text
+        link = item.select_one(".result-title")["href"]
+
+        price_tag = item.select_one(".result-price")
+        price = int(price_tag.text.replace("$", "")) if price_tag else 0
+
+        year = extract_year(title)
+        mileage = 0
+
+        conn.execute("""
+            INSERT INTO cars (title, price, year, mileage, link)
+            VALUES (?, ?, ?, ?, ?)
+        """, (title, price, year, mileage, link))
+
+    conn.commit()
+    conn.close()
